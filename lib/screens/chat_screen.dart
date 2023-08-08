@@ -33,10 +33,19 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void messagesStream() async {
+    await for (var snapshot in _firestore.collection('messages').snapshots()) {
+      for (var message in snapshot.docs) {
+        print('Message: ${message.data()}');
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     getCurrentUser();
+    messagesStream();
   }
 
   @override
