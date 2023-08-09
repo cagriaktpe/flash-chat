@@ -10,6 +10,7 @@ Flash Chat is an instant messaging app developed using Flutter. Users can use th
 
 - `Flutter`
 - `Dart`
+- `Firebase`
 
 ## Packages Used
 
