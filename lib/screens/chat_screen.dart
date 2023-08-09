@@ -6,8 +6,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // Constants imports
 import 'package:flash_chat/constants.dart';
 
+// Auth and Firestore
 final _auth = FirebaseAuth.instance;
 final _firestore = FirebaseFirestore.instance;
+User? loggedInUser;
 
 class ChatScreen extends StatefulWidget {
   static const String id = 'chat_screen';
@@ -22,7 +24,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   final messageTextController = TextEditingController();
 
-  User? loggedInUser;
   String? messageText;
 
   void getCurrentUser() {
@@ -37,19 +38,10 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void messagesStream() async {
-    await for (var snapshot in _firestore.collection('messages').snapshots()) {
-      for (var message in snapshot.docs) {
-        print('Message: ${message.data()}');
-      }
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     getCurrentUser();
-    messagesStream();
   }
 
   @override
@@ -100,6 +92,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         {
                           'text': messageText,
                           'sender': loggedInUser!.email,
+                          'createdAt': FieldValue.serverTimestamp(),
                         },
                       );
                       messageTextController.clear();
@@ -125,7 +118,7 @@ class MessagesStream extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: _firestore.collection('messages').snapshots(),
+      stream: _firestore.collection('messages').orderBy('createdAt', descending: true).snapshots(),
       builder: (context, snapshot) {
         // If there is no data
         if (!snapshot.hasData) {
@@ -141,14 +134,18 @@ class MessagesStream extends StatelessWidget {
         for (var message in messages) {
           final messageText = message.get('text');
           final messageSender = message.get('sender');
+          final currentUser = loggedInUser!.email;
+
           final messageBubble = MessageBubble(
             sender: messageSender,
             text: messageText,
+            isMe: currentUser == messageSender,
           );
           messageWidgets.add(messageBubble);
         }
         return Expanded(
           child: ListView(
+            reverse: true,
             padding: const EdgeInsets.symmetric(
                 horizontal: 10.0, vertical: 20.0),
             children: messageWidgets,
@@ -161,10 +158,11 @@ class MessagesStream extends StatelessWidget {
 
 
 class MessageBubble extends StatelessWidget {
-  const MessageBubble({super.key, required this.sender, required this.text});
+  const MessageBubble({super.key, required this.sender, required this.text, required this.isMe});
 
   final String sender;
   final String text;
+  final bool isMe;
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +170,7 @@ class MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.all(10.0),
       child: Column(
         // Align message to the right if it's from the logged in user
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           // Sender
           Text(
@@ -185,15 +183,22 @@ class MessageBubble extends StatelessWidget {
           // Message
           Material(
             elevation: 5.0,
-            borderRadius: const BorderRadius.all(Radius.circular(30.0)),
-            color: Colors.lightBlueAccent,
+            borderRadius: isMe ? const BorderRadius.only(
+              topLeft: Radius.circular(30.0),
+              bottomLeft: Radius.circular(30.0),
+              bottomRight: Radius.circular(30.0),
+            ) : const BorderRadius.only(
+              topRight: Radius.circular(30.0),
+              bottomLeft: Radius.circular(30.0),
+              bottomRight: Radius.circular(30.0),),
+            color: isMe ? Colors.lightBlueAccent : Colors.white,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
               child: Text(
                 '$text',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15.0,
-                  color: Colors.white,
+                  color: isMe ? Colors.white : Colors.black54,
                 ),
               ),
             ),
