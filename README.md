@@ -42,7 +42,7 @@ git clone https://github.com/denaktepe/flash-chat.git
 cd flash-chat
 ```
 
-3.and then run to install necessary Flutter dependencies.
+3. and then run to install necessary Flutter dependencies.
 ```
 flutter pub get
 ``` 
