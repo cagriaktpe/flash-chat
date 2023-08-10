@@ -1,8 +1,10 @@
 // package imports
 import 'package:flutter/material.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // screen imports
+import 'chat_screen.dart';
 import 'login_screen.dart';
 import 'registration_screen.dart';
 
@@ -22,6 +24,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
 
   late AnimationController controller;
   late Animation animation;
+
+  // auth
+  final _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -85,17 +90,33 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
             // Login button
             RoundedButton(
               colour: Colors.lightBlueAccent,
-              title: 'Log In',
+              title: _auth.currentUser != null ? 'Join the Chat' : 'Log In',
               onPressed: () {
-                Navigator.pushNamed(context, LoginScreen.id);
+                // If user is already logged in, go to chat screen
+                if (_auth.currentUser != null) {
+                  Navigator.pushNamed(context, ChatScreen.id);
+                }
+                // else, go to login screen
+                else {
+                  Navigator.pushNamed(context, LoginScreen.id);
+                }
               },
             ),
             // Register button
             RoundedButton(
               colour: Colors.blueAccent,
-              title: 'Register',
+              title: _auth.currentUser != null ? 'Log Out' : 'Register',
               onPressed: () {
-                Navigator.pushNamed(context, RegistrationScreen.id);
+                // If user is already logged in, log them out
+                if (_auth.currentUser != null) {
+                  _auth.signOut();
+                  // refresh the screen
+                  Navigator.pushNamed(context, WelcomeScreen.id);
+                }
+                // else, go to registration screen
+                else {
+                  Navigator.pushNamed(context, RegistrationScreen.id);
+                }
               },
             ),
           ],

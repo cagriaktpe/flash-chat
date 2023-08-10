@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Screen imports
+import 'package:flash_chat/screens/welcome_screen.dart';
+
 // Constants imports
 import 'package:flash_chat/constants.dart';
 
@@ -48,14 +51,24 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: null,
+        // Customise leading and actions
+        automaticallyImplyLeading: false,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushNamed(context, WelcomeScreen.id);
+            },
+          ),
+        ),
         actions: <Widget>[
           // Logout button
           IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
                 _auth.signOut();
-                Navigator.pop(context);
+                Navigator.pushNamed(context, WelcomeScreen.id);
               }),
         ],
         title: const Text('⚡️Chat'),
