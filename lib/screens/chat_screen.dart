@@ -9,10 +9,11 @@ import 'package:flash_chat/screens/welcome_screen.dart';
 // Constants imports
 import 'package:flash_chat/constants.dart';
 
-// Auth and Firestore
+// Auth and Firestore variables
 final _auth = FirebaseAuth.instance;
 final _firestore = FirebaseFirestore.instance;
 User? loggedInUser;
+late var listener;
 
 class ChatScreen extends StatefulWidget {
   static const String id = 'chat_screen';
@@ -24,7 +25,6 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-
   final messageTextController = TextEditingController();
 
   String? messageText;
@@ -41,10 +41,25 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // send notifications to the user when the new message created
+  void sendNotification() async {
+    listener = _firestore.collection('messages').snapshots().listen((event) {
+      for (var change in event.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          if (change.doc.get('createdAt') == null ||
+              change.doc.get('createdAt').toDate().isAfter(DateTime.now())) {
+            print('New message: ${change.doc.get('text')}');
+          }
+        }
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     getCurrentUser();
+    sendNotification();
   }
 
   @override
@@ -131,7 +146,10 @@ class MessagesStream extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: _firestore.collection('messages').orderBy('createdAt', descending: true).snapshots(),
+      stream: _firestore
+          .collection('messages')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
       builder: (context, snapshot) {
         // If there is no data
         if (!snapshot.hasData) {
@@ -159,8 +177,8 @@ class MessagesStream extends StatelessWidget {
         return Expanded(
           child: ListView(
             reverse: true,
-            padding: const EdgeInsets.symmetric(
-                horizontal: 10.0, vertical: 20.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
             children: messageWidgets,
           ),
         );
@@ -169,9 +187,12 @@ class MessagesStream extends StatelessWidget {
   }
 }
 
-
 class MessageBubble extends StatelessWidget {
-  const MessageBubble({super.key, required this.sender, required this.text, required this.isMe});
+  const MessageBubble(
+      {super.key,
+      required this.sender,
+      required this.text,
+      required this.isMe});
 
   final String sender;
   final String text;
@@ -183,7 +204,8 @@ class MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.all(10.0),
       child: Column(
         // Align message to the right if it's from the logged in user
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           // Sender
           Text(
@@ -196,17 +218,21 @@ class MessageBubble extends StatelessWidget {
           // Message
           Material(
             elevation: 5.0,
-            borderRadius: isMe ? const BorderRadius.only(
-              topLeft: Radius.circular(30.0),
-              bottomLeft: Radius.circular(30.0),
-              bottomRight: Radius.circular(30.0),
-            ) : const BorderRadius.only(
-              topRight: Radius.circular(30.0),
-              bottomLeft: Radius.circular(30.0),
-              bottomRight: Radius.circular(30.0),),
+            borderRadius: isMe
+                ? const BorderRadius.only(
+                    topLeft: Radius.circular(30.0),
+                    bottomLeft: Radius.circular(30.0),
+                    bottomRight: Radius.circular(30.0),
+                  )
+                : const BorderRadius.only(
+                    topRight: Radius.circular(30.0),
+                    bottomLeft: Radius.circular(30.0),
+                    bottomRight: Radius.circular(30.0),
+                  ),
             color: isMe ? Colors.lightBlueAccent : Colors.white,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
               child: Text(
                 '$text',
                 style: TextStyle(
