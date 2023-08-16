@@ -13,7 +13,6 @@ import 'package:flash_chat/constants.dart';
 final _auth = FirebaseAuth.instance;
 final _firestore = FirebaseFirestore.instance;
 User? loggedInUser;
-late var listener;
 
 class ChatScreen extends StatefulWidget {
   static const String id = 'chat_screen';
@@ -41,25 +40,10 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // send notifications to the user when the new message created
-  void sendNotification() async {
-    listener = _firestore.collection('messages').snapshots().listen((event) {
-      for (var change in event.docChanges) {
-        if (change.type == DocumentChangeType.added) {
-          if (change.doc.get('createdAt') == null ||
-              change.doc.get('createdAt').toDate().isAfter(DateTime.now())) {
-            print('New message: ${change.doc.get('text')}');
-          }
-        }
-      }
-    });
-  }
-
   @override
   void initState() {
     super.initState();
     getCurrentUser();
-    sendNotification();
   }
 
   @override
@@ -174,6 +158,7 @@ class MessagesStream extends StatelessWidget {
           );
           messageWidgets.add(messageBubble);
         }
+
         return Expanded(
           child: ListView(
             reverse: true,
